@@ -1,11 +1,9 @@
-﻿// Upgrade NOTE: replaced 'mul(UNITY_MATRIX_MVP,*)' with 'UnityObjectToClipPos(*)'
-
-Shader "Unlit/WaterHeightShader"
+﻿Shader "Unlit/WaterHeightShader"
 {
 	Properties
 	{
 		_Color("Color", Color) = (1,1,1,0)
-		_MainTex("InputTex", 2D) = "black" {}
+		_MainTex("Base (RGB)", 2D) = "black" {}
 	}
 
 	SubShader
@@ -16,8 +14,7 @@ Shader "Unlit/WaterHeightShader"
 		Pass
 		{
 			CGPROGRAM
-
-			#pragma vertex vert             
+			#pragma vertex vert
 			#pragma fragment frag
 
 			struct vertInput 
@@ -33,19 +30,22 @@ Shader "Unlit/WaterHeightShader"
 			};
 			float4 _Color;
 			sampler2D  _MainTex;
-
+			
 			vertOutput vert(vertInput input) {
 				vertOutput o;
+				// TODO: Understand.
 				o.pos = UnityObjectToClipPos(input.pos);
 				o.texcoord = input.texcoord;
 				return o;
 			}
-
-			float4 frag(vertOutput output) : COLOR{
-				
-				float4 mainColour = tex2D(_MainTex, output.texcoord);
-				return mainColour * _Color;
+			
+			float4 frag(vertOutput IN) : COLOR
+			{
+				float4 mainColor = tex2D(_MainTex, IN.texcoord);
+				return _Color + _Time / 10;
 			}
+
+			
 			ENDCG
 		}
 	}

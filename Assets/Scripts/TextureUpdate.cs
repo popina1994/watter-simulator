@@ -6,6 +6,7 @@ public class TextureUpdate : MonoBehaviour
 {
 
     public Texture currentTexture;
+    public Material mat;
 
     void Awake()
     {
@@ -21,4 +22,6 @@ public class TextureUpdate : MonoBehaviour
 	void Update () {
 		
 	}
+
+
 }
