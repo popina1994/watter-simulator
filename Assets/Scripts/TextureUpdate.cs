@@ -2,13 +2,19 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class PlayerComponent : MonoBehaviour {
+public class TextureUpdate : MonoBehaviour
+{
+
+    public Texture currentTexture;
+
+    void Awake()
+    {
+        Debug.Log("Texture Update");
+    }
 
 	// Use this for initialization
-	void Start ()
-	{
-	    int t = 1;
-        Debug.Log("Start");
+	void Start () {
+
 	}
 	
 	// Update is called once per frame
