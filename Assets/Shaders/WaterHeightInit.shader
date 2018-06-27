@@ -51,23 +51,30 @@
 				return o;
 			}
 
-			float4 frag(vertexOutput fragIn) : COLOR
+			float scaleToTexture(float fragPos)
+			{
+				return fragPos / 256.0;
+			}
+
+			float4 frag(vertexOutput fragIn) : SV_Target
 			{
 				float4 texel = tex2D(_MainTex, fragIn.tex);
 				float4 t;
-				float up = (fragIn.pos.y + 1) / 256.0;
-				float down = (fragIn.pos.y - 1) / 256.0;
-				float left = (fragIn.pos.x - 1) / 256.0;
-				float right = (fragIn.pos.x + 1) / 256.0;
-
-				float4 texelUp = tex2D(_MainTex, float2(fragIn.pos.x, min(up, 1)));
-				float4 texelDown = tex2D(_MainTex, float2(fragIn.pos.x, max(down, 0)));
-				float4 texelLeft = tex2D(_MainTex, float2(fragIn.pos.x, max(left, 0)));
-				float4 texelRight = tex2D(_MainTex, float2(fragIn.pos.x, min(right, 1)));
-				t.r = 0;
-				t.g = 1;
+				float upY = scaleToTexture(fragIn.pos.y + 1);
+				float downY = scaleToTexture(fragIn.pos.y - 1);
+				float leftX = scaleToTexture(fragIn.pos.x - 1);
+				float rightX = scaleToTexture(fragIn.pos.x + 1);
+				float texX = scaleToTexture(fragIn.pos.x);
+				float texY = scaleToTexture(fragIn.pos.y);
+				float4 texelUp = tex2D(_MainTex, float2(texX, min(upY, 1)));
+				float4 texelDown = tex2D(_MainTex, float2(texX, max(downY, 0)));
+				float4 texelLeft = tex2D(_MainTex, float2(max(leftX, 0), texY));
+				float4 texelRight = tex2D(_MainTex, float2(min(rightX, 1), texY));
+				t.r = 0.1;
+				t.g = sin(sqrt(texX * texX + texY * texY));
 				t.b = 0;
-				t.a = 1;
+				// DEBUGGING PURPOSES
+				t.a = 100000;
 				// red is a velocity
 				// green is a height
 				return t;

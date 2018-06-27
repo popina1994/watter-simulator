@@ -56,7 +56,7 @@
 				return fragPos / 256.0;
 			}
 
-			float4 frag(vertexOutput fragIn) : COLOR
+			float4 frag(vertexOutput fragIn) : SV_Target
 			{
 				float4 texel = tex2D(_MainTex, fragIn.tex);
 				float4 t;
@@ -72,20 +72,14 @@
 				float4 texelLeft= tex2D(_MainTex, float2(max(leftX, 0), texY));
 				float4 texelRight = tex2D(_MainTex, float2(min(rightX, 1), texY));
 				
-				if ((fragIn.pos.x < 200) && (fragIn.pos.y < 200))
-				{
-					t.r = (texelUp.g + texelDown.g + texelLeft.g 						
-						+ texelRight.g) / 4.0f - texel.g;
-					t.r *= 0.99;
-					t.g = texel.g + t.r;	
-					t.b = 0;
-					t.a = 1;
-					return t;
-
-				}
-					
-				// RGBA
-				return fixed4(0, 0, 1, 1);
+				t.r = (texelUp.g + texelDown.g + texelLeft.g 						
+					+ texelRight.g) / 4.0f - texel.g;
+				t.r *= 0.99;
+				t.g = texel.g + t.r;
+				t.a = 1;
+				t.b = 0;
+				//t.g = 0;
+				return t;
 			}
 			ENDCG
 		}
