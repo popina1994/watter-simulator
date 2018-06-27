@@ -55,13 +55,13 @@ public class RenderWater : MonoBehaviour
 
     private static float GetHeight(RenderTexture renderTexture, float[] velHeightMap, int row, int col)
     {
-        return velHeightMap[IndexInTextureArray(renderTexture, row, col)] * 100;
+        return velHeightMap[IndexInTextureArray(renderTexture, row, col)] * 10;
     }
 
     private static Vector3 GenerateVertex(RenderTexture heightMapTexture, float[] velHeightMap, 
         int row, int col)
     {
-        return new Vector3(row/10.0f, GetHeight(heightMapTexture, velHeightMap, row, col), col /10.0f);
+        return new Vector3(row/10.0f, GetHeight(heightMapTexture, velHeightMap, row, col), col /20.0f);
     }
 
     private static void AddHeightToMesh(List<Vector3> vertices, List<int> triangles, Vector3 vertex1, Vector3 vertex2,
