@@ -1,55 +1,93 @@
-﻿Shader "Unlit/WaterHeightShader"
+﻿Shader "WaterHeightShader"
 {
 	Properties
 	{
 		// Type of the texture seen by unity editor.
 		_MainTex("Base (RGB)", 2D) = "black" {}
-	_Color("Color", Color) = (1.0, 1.0, 0.0, 1.0)
+		_Color("Color", Color) = (1.0, 1.0, 0.0, 1.0)
 	}
 
-		SubShader
+	SubShader
 	{
 
 		Pass
-	{
-		ZWrite On ZTest LEqual
-		CGPROGRAM
-#pragma vertex vert
-#pragma fragment frag
+		{
+			ZWrite On ZTest LEqual
+			CGPROGRAM
+	#pragma vertex vert
+	#pragma fragment frag
 
-#include "UnityCG.cginc"
+	#include "UnityCG.cginc"
 
-		struct vertInput
-	{
-		float4 pos : POSITION;
-		float2 uv: TEXCOORD0;
-	};
+			struct vertexInput 
+			{
+				float4 vertex: POSITION;
+				//float3 normal: NORMAL;
+				float4 texcoord: TEXCOORD0;
+				//float4 tangent: TANGENT;
+			};
+			struct vertexOutput 
+			{
+				float4 pos: SV_POSITION;
+				float4 tex: TEXCOORD0;
+				/*
+				float4 posWorld: TEXCOORD1;
+				float3 normalWorld: TEXCOORD2;
+				float3 tangentWorld: TEXCOORD3;
+				float3 binormalWorld: TEXCOORD4;
+				*/
+			};
+			// This is a type of texture seen by shader.
+			sampler2D  _MainTex;
+			half3   _Color;
+			const int idxVel = 0;
+			const int idxHeight = 1;
 
-	struct vertOutput
-	{
-		float4 pos : SV_POSITION;
-		float2 texcoord: TEXCOORD0;
-	};
-	// This is a type of texture seen by shader.
-	sampler2D  _MainTex;
-	half3   _Color;
+			vertexOutput vert(vertexInput input) 
+			{
+				vertexOutput o;
+				o.pos = UnityObjectToClipPos(input.vertex);
+				o.tex = input.texcoord;
+				return o;
+			}
 
-	vertOutput vert(vertInput input) {
-		vertOutput o;
-		// TODO: Understand.
-		o.pos = UnityObjectToClipPos(input.pos);
-		o.texcoord = input.uv;
-		return o;
-	}
+			float scaleToTexture(float fragPos)
+			{
+				return fragPos / 256.0;
+			}
 
-	float4 frag(vertOutput IN) : COLOR
-	{
-		fixed4 mainColor = tex2D(_MainTex, IN.texcoord);
-		return mainColor + _Time / 10;
-	// RGBA
-		//return fixed4(0, 0, 1, 1);
-	}
-		ENDCG
-	}
+			float4 frag(vertexOutput fragIn) : COLOR
+			{
+				float4 texel = tex2D(_MainTex, fragIn.tex);
+				float4 t;
+				float upY = scaleToTexture(fragIn.pos.y + 1);
+				float downY = scaleToTexture(fragIn.pos.y - 1);
+				float leftX = scaleToTexture(fragIn.pos.x - 1);
+				float rightX = scaleToTexture(fragIn.pos.x + 1);
+				float texX = scaleToTexture(fragIn.pos.x);
+				float texY = scaleToTexture(fragIn.pos.y);
+
+				float4 texelUp = tex2D(_MainTex, float2(texX, min(upY, 1)));
+				float4 texelDown = tex2D(_MainTex, float2(texX, max(downY, 0)));
+				float4 texelLeft= tex2D(_MainTex, float2(max(leftX, 0), texY));
+				float4 texelRight = tex2D(_MainTex, float2(min(rightX, 1), texY));
+				
+				if ((fragIn.pos.x < 200) && (fragIn.pos.y < 200))
+				{
+					t.r = (texelUp.g + texelDown.g + texelLeft.g 						
+						+ texelRight.g) / 4.0f - texel.g;
+					t.r *= 0.99;
+					t.g = texel.g + t.r;	
+					t.b = 0;
+					t.a = 1;
+					return t;
+
+				}
+					
+				// RGBA
+				return fixed4(0, 0, 1, 1);
+			}
+			ENDCG
+		}
 	}
 }
