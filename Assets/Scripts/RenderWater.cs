@@ -4,25 +4,48 @@ using UnityEngine;
 
 public class RenderWater : MonoBehaviour
 {
-    [SerializeField]public Camera renderCamera;
     public RenderTexture texture1;
     public RenderTexture texture2;
-    public RenderTexture texture3;
     public Material material1;
     public Material material2;
     private GameObject waterQuad;
     private int idx = 0;
     private int idxShader = 0;
-
-	void Start () {
-        GL.Clear(false, true, Color.clear);
-	    renderCamera.targetTexture = texture3;
+    private float xPos;
+    private float yPos;
+    [SerializeField]
+    private float isClicked = 1;
+    public static float scaleCol = 20f;
+    public static float scaleRow = 10f;
+    public static float scaleHeight = 2f;
+    private static float  []resultsArray = null;
+	void Start ()
+	{
+	    isClicked = 0;
         waterQuad = GameObject.Find("WaterSurface");
+    }
+
+    private void ConvertClickedPointToTextureCoordinate(Vector3 clickPoint)
+    {
+        // row -> x, col-> z
+        xPos = scaleRow * clickPoint.x;
+        yPos = scaleCol * clickPoint.z;
     }
 
     void Update()
     {
-        renderCamera.targetTexture = texture3;
+        if (Input.GetMouseButtonDown(0))
+        {
+            Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+            RaycastHit hitInfo;
+            if (Physics.Raycast(ray, out hitInfo) && 
+                hitInfo.transform.name == waterQuad.name)
+            {
+                isClicked = 1;
+                ConvertClickedPointToTextureCoordinate(hitInfo.point);
+                Debug.Log("Clicked");
+            }
+        }
         idx = (idx + 1) % 2;
     }
 
@@ -34,16 +57,20 @@ public class RenderWater : MonoBehaviour
         tex.Apply();
         RenderTexture.active = null;
         Color[] pix2 = tex.GetPixels();
-        float[] results = new float[pix2.Length * 2];
+        if (resultsArray == null)
+        {
+            resultsArray = new float[pix2.Length * 2];
+        }
+        
         for (int i = 0; i < pix2.Length; i++)
         {
-            results[i * 2] = pix2[i].r;
-            results[i * 2 + 1] = pix2[i].g;
+            resultsArray[i * 2] = pix2[i].r;
+            resultsArray[i * 2 + 1] = pix2[i].g;
             //results[i * 4 + 2] = pix2[i].b;
             //results[i * 4 + 3] = pix2[i].a;
         }
 
-        return results;
+        return resultsArray;
         // TODO: Rethihk about necessity of veliocity. 
 
     }
@@ -55,13 +82,13 @@ public class RenderWater : MonoBehaviour
 
     private static float GetHeight(RenderTexture renderTexture, float[] velHeightMap, int row, int col)
     {
-        return velHeightMap[IndexInTextureArray(renderTexture, row, col)] * 10;
+        return velHeightMap[IndexInTextureArray(renderTexture, row, col)]  * scaleHeight;
     }
 
     private static Vector3 GenerateVertex(RenderTexture heightMapTexture, float[] velHeightMap, 
         int row, int col)
     {
-        return new Vector3(row/10.0f, GetHeight(heightMapTexture, velHeightMap, row, col), col /20.0f);
+        return new Vector3(row / scaleRow, GetHeight(heightMapTexture, velHeightMap, row, col), col / scaleCol);
     }
 
     private static void AddHeightToMesh(List<Vector3> vertices, List<int> triangles, Vector3 vertex1, Vector3 vertex2,
@@ -76,10 +103,9 @@ public class RenderWater : MonoBehaviour
         triangles.Add(vertexId + 2);
     }
 
-    private void UpdateWaterBasedOnHeightMap(RenderTexture heightMapTexture)
+    private static Mesh GenerateMeshBasedOnHeightMap(RenderTexture heightMapTexture, 
+        float[] velHeightMap)
     {
-        float[] velHeightMap = GetTextureArrayFromRenderTexture(heightMapTexture);
-        MeshFilter meshFilter = waterQuad.GetComponent<MeshFilter>() as MeshFilter;
         Mesh mesh = new Mesh();
         List<Vector3> vertices = new List<Vector3>();
         List<int> triangles = new List<int>();
@@ -88,9 +114,9 @@ public class RenderWater : MonoBehaviour
         Vector3 leftBottom;
         Vector3 rightBottom;
 
-        for (int row = 0; row < heightMapTexture.width - 1; row ++)
+        for (int row = 0; row < heightMapTexture.height - 1; row++)
         {
-            for (int col = 0; col < heightMapTexture.height - 1; col++)
+            for (int col = 0; col < heightMapTexture.width - 1; col++)
             {
                 leftTop = GenerateVertex(heightMapTexture, velHeightMap, row, col);
                 rightTop = GenerateVertex(heightMapTexture, velHeightMap, row, col + 1);
@@ -100,10 +126,52 @@ public class RenderWater : MonoBehaviour
                 AddHeightToMesh(vertices, triangles, rightTop, rightBottom, leftTop);
             }
         }
+        //TODO Rethink how to solve problem of limitation of mesh in Unity. 
+        // 65536
         mesh.SetVertices(vertices);
         mesh.triangles = triangles.ToArray();
         mesh.RecalculateNormals();
-        meshFilter.mesh = mesh;
+        return mesh;
+    }
+
+    private static Mesh GenerateSimplifiedMeshBasedOnHeightMap(RenderTexture heightMapTexture,
+        float[] velHeightMap)
+    {
+        Mesh mesh = new Mesh();
+        List<Vector3> vertices = new List<Vector3>();
+        List<int> triangles = new List<int>();
+        Vector3 leftTop;
+        Vector3 rightTop;
+        Vector3 leftBottom;
+        Vector3 rightBottom;
+
+        leftTop = GenerateVertex(heightMapTexture, velHeightMap, 0, 0);
+        rightTop = GenerateVertex(heightMapTexture, velHeightMap, 0, heightMapTexture.width - 1);
+        leftBottom = GenerateVertex(heightMapTexture, velHeightMap, heightMapTexture.height - 1, 0);
+        rightBottom = GenerateVertex(heightMapTexture, velHeightMap, heightMapTexture.height - 1, 
+                                     heightMapTexture.width - 1);
+        AddHeightToMesh(vertices, triangles, rightBottom, leftBottom, leftTop);
+        AddHeightToMesh(vertices, triangles, rightTop, rightBottom, leftTop);
+
+        mesh.SetVertices(vertices);
+        mesh.triangles = triangles.ToArray();
+        mesh.RecalculateNormals();
+        return mesh;
+    }
+
+    private void InitializeMeshColider(RenderTexture heightMapTexture)
+    {
+        float[] velHeightMap = GetTextureArrayFromRenderTexture(heightMapTexture);
+        MeshCollider meshCollider = waterQuad.GetComponent<MeshCollider>() as MeshCollider;
+        meshCollider.sharedMesh = GenerateSimplifiedMeshBasedOnHeightMap(heightMapTexture, velHeightMap);
+    }
+
+    private void UpdateWaterBasedOnHeightMap(RenderTexture heightMapTexture)
+    {
+        float[] velHeightMap = GetTextureArrayFromRenderTexture(heightMapTexture);
+        MeshFilter meshFilter = waterQuad.GetComponent<MeshFilter>() as MeshFilter;
+        
+        meshFilter.mesh = GenerateMeshBasedOnHeightMap(heightMapTexture, velHeightMap);
     }
 
     void OnRenderImage(RenderTexture src, RenderTexture dest)
@@ -122,8 +190,8 @@ public class RenderWater : MonoBehaviour
         {
             material1.shader = Shader.Find("WaterHeightInit");
             Graphics.Blit(texture2, texture1, material1);
-            float []tmp = GetTextureArrayFromRenderTexture(texture1);
             material1.shader = Shader.Find("Standard");
+            InitializeMeshColider(texture1);
         }
         else if (idxShader == 1)
         {
@@ -133,13 +201,21 @@ public class RenderWater : MonoBehaviour
         }
         else
         {
-            otherMatherial.shader = Shader.Find("WaterHeightShader");
-            Graphics.Blit(currentTexture, otherTexture, otherMatherial);
-            UpdateWaterBasedOnHeightMap(currentTexture);
-            otherMatherial.shader = Shader.Find("Standard");
+            
+            //otherMatherial.SetFloat("_xPos", xPos);
+            //otherMatherial.SetFloat("_yPos", yPos);
 
-            // Check values
-            // Draw triangles based on this values.
+            otherMatherial.shader = Shader.Find("WaterHeightShader");
+            otherMatherial.SetFloat("_IsClicked", isClicked);
+            isClicked = 0;
+            Graphics.Blit(currentTexture, otherTexture, otherMatherial);
+
+            // Used for improving optimization of simulation.
+            if (idxShader % 3 == 0)
+            {
+                UpdateWaterBasedOnHeightMap(currentTexture);
+            }
+            otherMatherial.shader = Shader.Find("Standard");
         }
 
         idxShader = idxShader + 1;

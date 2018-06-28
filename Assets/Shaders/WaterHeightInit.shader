@@ -53,24 +53,16 @@
 
 			float scaleToTexture(float fragPos)
 			{
-				return fragPos / 256.0;
+				return 2 * (fragPos / 256.0 - 0.5);
 			}
 
 			float4 frag(vertexOutput fragIn) : SV_Target
 			{
 				float4 texel = tex2D(_MainTex, fragIn.tex);
 				float4 t;
-				float upY = scaleToTexture(fragIn.pos.y + 1);
-				float downY = scaleToTexture(fragIn.pos.y - 1);
-				float leftX = scaleToTexture(fragIn.pos.x - 1);
-				float rightX = scaleToTexture(fragIn.pos.x + 1);
 				float texX = scaleToTexture(fragIn.pos.x);
 				float texY = scaleToTexture(fragIn.pos.y);
-				float4 texelUp = tex2D(_MainTex, float2(texX, min(upY, 1)));
-				float4 texelDown = tex2D(_MainTex, float2(texX, max(downY, 0)));
-				float4 texelLeft = tex2D(_MainTex, float2(max(leftX, 0), texY));
-				float4 texelRight = tex2D(_MainTex, float2(min(rightX, 1), texY));
-				t.r = 0.1;
+				t.r = 0;
 				t.g = sin(sqrt(texX * texX + texY * texY));
 				t.b = 0;
 				// DEBUGGING PURPOSES
