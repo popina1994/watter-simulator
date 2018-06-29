@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using Assets.Scripts;
 using UnityEngine;
 
 public class RenderWater : MonoBehaviour
@@ -21,10 +22,12 @@ public class RenderWater : MonoBehaviour
     public static float scaleHeight = 2f;
     private static float  []resultsArray = null;
     private Mesh _meshTmp;
+    private ObjectLogic objectLogic;
 	void Start ()
 	{
 	    isClicked = 0;
         waterQuad = GameObject.Find("WaterSurface");
+        objectLogic = new ObjectLogic();
 	}
 
     private void ConvertClickedPointToTextureCoordinate(Vector3 clickPoint)
@@ -48,6 +51,10 @@ public class RenderWater : MonoBehaviour
                 ConvertClickedPointToTextureCoordinate(localPoint);
                 //Debug.Log("Clicked" + xPos.ToString() + " : " + yPos.ToString());
             }
+        }
+        else if (objectLogic.IsKeyPressed())
+        {
+            objectLogic.ProcessKeyPresses();
         }
         idx = (idx + 1) % 2;
     }
@@ -221,7 +228,7 @@ public class RenderWater : MonoBehaviour
         }
 
         idxShader = idxShader + 1;
-
-
     }
+
+
 }
