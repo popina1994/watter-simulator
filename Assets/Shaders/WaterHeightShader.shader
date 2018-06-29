@@ -78,19 +78,28 @@
 				float rightX = scaleToTexture(fragIn.pos.x + 1);
 				float texX = scaleToTexture(fragIn.pos.x);
 				float texY = scaleToTexture(fragIn.pos.y);
-				
+
 				float4 texelUp = tex2D(_MainTex, float2(texX, min(upY, 1)));
 				float4 texelDown = tex2D(_MainTex, float2(texX, max(downY, 0)));
-				float4 texelLeft= tex2D(_MainTex, float2(max(leftX, 0), texY));
+				float4 texelLeft = tex2D(_MainTex, float2(max(leftX, 0), texY));
 				float4 texelRight = tex2D(_MainTex, float2(min(rightX, 1), texY));
 
-					f = ((texelUp.g + texelDown.g + texelLeft.g 						
-						+ texelRight.g) / 4.0f - texel.g)/4;
+					f = ((texelUp.g + texelDown.g + texelLeft.g
+						+ texelRight.g) / 4.0f - texel.g) / 4;
+					if (f > 0.1)
+					{
+						f = 0.1;
+					}
+					if (f < -0.1)
+					{
+						f = 0.1;
+					}
 					t.r = texel.r + f;	
 					t.g = texel.g + t.r;
 					if ((_IsClicked == 1) && isInRadius(fragIn.pos.x, fragIn.pos.y, _Radius))
 					{
-						t.r = -t.r;
+						//t.r = -t.r;
+						t.g = t.g - 0.001;
 					}
 					t.b = 0;
 					t.a = 1;

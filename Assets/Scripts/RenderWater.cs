@@ -36,7 +36,7 @@ public class RenderWater : MonoBehaviour
 
     void Update()
     {
-        if (Input.GetMouseButtonDown(0))
+        if (Input.GetMouseButtonDown(0) || Input.GetMouseButton(0))
         {
             Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
             RaycastHit hitInfo;
@@ -46,7 +46,7 @@ public class RenderWater : MonoBehaviour
                 isClicked = 1;
                 Vector3 localPoint = waterQuad.transform.InverseTransformPoint(hitInfo.point);
                 ConvertClickedPointToTextureCoordinate(localPoint);
-                Debug.Log("Clicked" + xPos.ToString() + " : " + yPos.ToString());
+                //Debug.Log("Clicked" + xPos.ToString() + " : " + yPos.ToString());
             }
         }
         idx = (idx + 1) % 2;
@@ -207,20 +207,16 @@ public class RenderWater : MonoBehaviour
         }
         else
         {
-            
+            // I cannot explain why coordinates are swaped. 
             otherMatherial.shader = Shader.Find("WaterHeightShader");
             otherMatherial.SetFloat("_xPos", yPos);
             otherMatherial.SetFloat("_yPos", xPos);
             otherMatherial.SetFloat("_IsClicked", isClicked);
             otherMatherial.SetFloat("_Radius", radius);
             Graphics.Blit(currentTexture, otherTexture, otherMatherial);
-
             isClicked = 0;
-            // Used for improving optimization of simulation.
-            if (idxShader % 1 == 0)
-            {
-                UpdateWaterBasedOnHeightMap(currentTexture);
-            }
+
+            UpdateWaterBasedOnHeightMap(currentTexture);
             otherMatherial.shader = Shader.Find("Standard");
         }
 
