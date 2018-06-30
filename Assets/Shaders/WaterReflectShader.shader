@@ -69,8 +69,6 @@
 				col.a = 1;
 				//col.a = (1 - dot(viewDir, fragIn.normal))*(1 - _Transparency);
 				return col;
-
-				return float4(0, 1, 0, 1);
 			}
 			ENDCG
 		}
