@@ -6,10 +6,15 @@ using UnityEngine;
 
 public class RenderWater : MonoBehaviour
 {
+    public Camera cameraCubeMap;
     public RenderTexture texture1;
     public RenderTexture texture2;
+    public RenderTexture textureSkyBox;
+    public RenderTexture textureReflection1;
+    public RenderTexture textureReflection2;
     public Material material1;
     public Material material2;
+    public Material materialCubeMap;
     public float radius;
     private GameObject waterQuad;
     private int idx = 0;
@@ -39,6 +44,7 @@ public class RenderWater : MonoBehaviour
 
     void Update()
     {
+
         if (Input.GetMouseButtonDown(0) || Input.GetMouseButton(0))
         {
             Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
@@ -221,10 +227,27 @@ public class RenderWater : MonoBehaviour
             otherMatherial.SetFloat("_IsClicked", isClicked);
             otherMatherial.SetFloat("_Radius", radius);
             Graphics.Blit(currentTexture, otherTexture, otherMatherial);
-            isClicked = 0;
-
             UpdateWaterBasedOnHeightMap(currentTexture);
+            isClicked = 0;
             otherMatherial.shader = Shader.Find("Standard");
+
+            cameraCubeMap.RenderToCubemap(textureSkyBox);
+
+            materialCubeMap.shader = Shader.Find("WaterReflectShader");
+            materialCubeMap.SetTexture("_CubeMap", textureSkyBox);
+            
+            if (idxShader % 2 == 0)
+            {
+                Graphics.Blit(null, textureReflection1, materialCubeMap);
+            }
+            else
+            {
+                Graphics.Blit(null, textureReflection2, materialCubeMap);
+            }
+            
+            
+
+            //materialCubeMap.shader = Shader.Find("Standard");
         }
 
         idxShader = idxShader + 1;

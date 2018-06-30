@@ -4,6 +4,7 @@
 	{
 		// Type of the texture seen by unity editor.
 		_MainTex("Base (RGB)", 2D) = "black" {}
+		_CubeMap("Cube map of surrounding", CUBE) = "white" {}
 		_Color("Color", Color) = (1.0, 1.0, 0.0, 1.0)
 		_IsClicked("Is clicked", Float) = 0
 		_xPos("Y position in clicked texture", Float) = 0
@@ -15,7 +16,7 @@
 	{
 		Pass
 		{
-			ZWrite On ZTest LEqual
+			ZWrite Off
 			CGPROGRAM
 	#pragma vertex vert
 	#pragma fragment frag
@@ -25,23 +26,23 @@
 			struct vertexInput 
 			{
 				float4 vertex: POSITION;
-				//float3 normal: NORMAL;
 				float4 texcoord: TEXCOORD0;
 				//float4 tangent: TANGENT;
 			};
 			struct vertexOutput 
 			{	
-				float4 pos: SV_POSITION;
+				float4 posWorld: SV_POSITION;
 				float4 tex: TEXCOORD0;
 				/*
 				float4 posWorld: TEXCOORD1;
-				float3 normalWorld: TEXCOORD2;
+				
 				float3 tangentWorld: TEXCOORD3;
 				float3 binormalWorld: TEXCOORD4;
 				*/
 			};
 			// This is a type of texture seen by shader.
 			sampler2D  _MainTex;
+			samplerCUBE _CubeMap;
 			half3   _Color;
 			float _IsClicked;
 			float _xPos;
@@ -50,10 +51,10 @@
 
 			vertexOutput vert(vertexInput input) 
 			{
-				vertexOutput o;
-				o.pos = UnityObjectToClipPos(input.vertex);
-				o.tex = input.texcoord;
-				return o;
+				vertexOutput output;
+				output.posWorld = UnityObjectToClipPos(input.vertex);
+				output.tex = input.texcoord;
+				return output;
 			}
 
 			float scaleToTexture(float fragPos)
@@ -72,12 +73,12 @@
 				float4 texel = tex2D(_MainTex, fragIn.tex);
 				float4 t;
 				float f;
-				float upY = scaleToTexture(fragIn.pos.y + 1);
-				float downY = scaleToTexture(fragIn.pos.y - 1);
-				float leftX = scaleToTexture(fragIn.pos.x - 1);
-				float rightX = scaleToTexture(fragIn.pos.x + 1);
-				float texX = scaleToTexture(fragIn.pos.x);
-				float texY = scaleToTexture(fragIn.pos.y);
+				float upY = scaleToTexture(fragIn.posWorld.y + 1);
+				float downY = scaleToTexture(fragIn.posWorld.y - 1);
+				float leftX = scaleToTexture(fragIn.posWorld.x - 1);
+				float rightX = scaleToTexture(fragIn.posWorld.x + 1);
+				float texX = scaleToTexture(fragIn.posWorld.x);
+				float texY = scaleToTexture(fragIn.posWorld.y);
 
 				float4 texelUp = tex2D(_MainTex, float2(texX, min(upY, 1)));
 				float4 texelDown = tex2D(_MainTex, float2(texX, max(downY, 0)));
@@ -96,10 +97,11 @@
 					}
 					t.r = texel.r + f;	
 					t.g = texel.g + t.r;
-					if ((_IsClicked == 1) && isInRadius(fragIn.pos.x, fragIn.pos.y, _Radius))
+					if ((_IsClicked == 1) && isInRadius(fragIn.posWorld.x, fragIn.posWorld.y, _Radius))
 					{
 						//t.r = -t.r;
 						t.g = t.g - 0.001;
+						//t.g = t.g - 0.05;
 					}
 					t.b = 0;
 					t.a = 1;
