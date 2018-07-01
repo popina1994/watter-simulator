@@ -99,8 +99,8 @@
 					t.g = texel.g + t.r;
 					if ((_IsClicked == 1) && isInRadius(fragIn.posWorld.x, fragIn.posWorld.y, _Radius))
 					{
-						//t.r = -t.r;
-						t.g = t.g - 0.001;
+						t.r = -t.r;
+						//t.g = t.g - 0.001;
 						//t.g = t.g - 0.05;
 					}
 					t.b = 0;

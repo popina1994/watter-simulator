@@ -15,6 +15,7 @@ public class RenderWater : MonoBehaviour
     public Material material1;
     public Material material2;
     public Material materialCubeMap;
+    public Color waterColor;
     public float radius;
     private GameObject waterQuad;
     private int idx = 0;
@@ -28,10 +29,12 @@ public class RenderWater : MonoBehaviour
     private static float  []resultsArray = null;
     private Mesh _meshTmp;
     private ObjectLogic objectLogic;
+    private static Vector4 surfaceNormal = new Vector4(0, 1, 0, 0);
 	void Start ()
 	{
 	    isClicked = 0;
         waterQuad = GameObject.Find("WaterSurface");
+	    materialCubeMap.shader = Shader.Find("WaterReflectShader");
         objectLogic = new ObjectLogic();
 	}
 
@@ -142,7 +145,7 @@ public class RenderWater : MonoBehaviour
             }
         }
         
-        //TODO Rethink how to solve problem of limitation of mesh in Unity. 
+        //TOD1O Rethink how to solve problem of limitation of mesh in Unity. 
         // 65536
         
         mesh.SetVertices(vertices);
@@ -232,10 +235,9 @@ public class RenderWater : MonoBehaviour
             otherMatherial.shader = Shader.Find("Standard");
 
             cameraCubeMap.RenderToCubemap(textureSkyBox);
-
-            materialCubeMap.shader = Shader.Find("WaterReflectShader");
             materialCubeMap.SetTexture("_CubeMap", textureSkyBox);
-            
+            materialCubeMap.SetVector("_NormalSurface", surfaceNormal);
+            materialCubeMap.SetColor("_ColorWater", waterColor);
             if (idxShader % 2 == 0)
             {
                 Graphics.Blit(null, textureReflection1, materialCubeMap);
@@ -244,10 +246,6 @@ public class RenderWater : MonoBehaviour
             {
                 Graphics.Blit(null, textureReflection2, materialCubeMap);
             }
-            
-            
-
-            //materialCubeMap.shader = Shader.Find("Standard");
         }
 
         idxShader = idxShader + 1;
