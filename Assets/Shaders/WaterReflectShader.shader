@@ -22,6 +22,8 @@
 	#pragma fragment frag
 
 	#include "UnityCG.cginc"
+	#include "Lighting.cginc"
+			
 
 			struct vertexInput
 			{
@@ -33,9 +35,9 @@
 			struct vertexOutput
 			{
 				float4 pos: SV_POSITION;
-				float3 tex: TEXCOORD0;
+				float3 objPos: TEXCOORD0;
 				float3 normal: NORMAL;
-				
+				float3 lightDir: TEXCOORD1;
 				/*
 				float4 pos: TEXCOORD1;
 
@@ -54,9 +56,36 @@
 			{
 				vertexOutput output;
 				output.pos = UnityObjectToClipPos(input.vertex);
-				output.tex = input.vertex;
+				output.objPos = input.vertex;
 				output.normal = input.normal;
+				// Light direction in world coordinates.
+				output.lightDir = normalize(ObjSpaceLightDir(input.vertex));
 				return output;
+			}
+
+			float4 extractCubeMapColor(vertexOutput fragIn, float3 viewDirObjSpace)
+			{
+				// Reflects vector to based on view direction and normal on that point.
+				float3 reflectCamera = reflect(-viewDirObjSpace, normalize(fragIn.normal));
+				// Represents uv coordinate in cube matrix.
+				float3 uv = mul(UNITY_MATRIX_M, float4(reflectCamera, 0));
+				float4 col = texCUBE(_CubeMap, uv);
+				return col;
+			}
+
+			float4 addSpecularLightToReflect(float4 color, vertexOutput fragIn, float3 viewDirObjSpace)
+			{
+				float lambert = max(0, dot(normalize(fragIn.normal),
+					normalize(fragIn.lightDir)));
+				float3 reflectLight = reflect(-fragIn.lightDir, fragIn.normal);
+				float spec = pow(max(dot(viewDirObjSpace, normalize(reflectLight)), 0.0), 32);
+				float specStrength = 0.7;
+				float minLightStrength = 0.1;
+				float3 specular = (_LightColor0 * spec * specStrength).rgb;
+				specular = float3(max(specular.r, minLightStrength),
+					max(specular.g, minLightStrength),
+					max(specular.b, minLightStrength));
+				return float4(color.rgb * lambert + float3(spec, spec, spec), color.a);
 			}
 
 			float4 convertToGrayscale(float4 color)
@@ -65,31 +94,30 @@
 				return float4(average, average, average, 1.0);
 			}
 
-			float4 colorize(float4 grayscale, float4 color)
+			float4 colorize(float4 fragColor, float4 color)
 			{
-				return (grayscale * color);
+				return (convertToGrayscale(fragColor) * color);
+			}
+
+			float4 addTransperencyAngle(float4 color, float3 normalToSurface, float3 viewDirObjSpace)
+			{
+				color.a = clamp(dot(viewDirObjSpace, normalize(normalToSurface)), 0, 1);
+				return color;
 			}
 
 			float4 frag(vertexOutput fragIn) : SV_Target
 			{
 				// Represents vector of direction of vertex 
 				// towards camera in object space that is normalized.
-				float3 viewDirObjSpace = normalize(ObjSpaceViewDir(float4(fragIn.tex, 1))).xyz;
-				float3 viewDirWorldSpace = normalize(WorldSpaceViewDir(float4(fragIn.tex, 1))).xyz;
-				// Reflects vector to based on view direction and normal on that point.
-				float3 uv = reflect(-viewDirObjSpace, normalize(fragIn.normal));
-
-				// Do not understand this part.
-				uv = mul(UNITY_MATRIX_M, float4(uv, 0));
-
-				fixed4 col = texCUBE(_CubeMap, uv);
-				
+				float3 viewDirObjSpace = normalize(ObjSpaceViewDir(float4(fragIn.objPos, 1))).xyz;
+				float4 col = extractCubeMapColor(fragIn, viewDirObjSpace);
+				col = addSpecularLightToReflect(col, fragIn, viewDirObjSpace);
 				// Changes colour of the output
-				float4 grayscale = convertToGrayscale(col);
-				float4 colorizedOutput = colorize(grayscale, _ColorWater);
-				// Transperency has to be added after changing the color. 
-				colorizedOutput.a = dot(viewDirObjSpace, fragIn.normal);
-				return colorizedOutput;
+				float4 colorizedOutput = colorize(col, _ColorWater);
+				// Transperency has to be added after changing the color.
+				float4 transpEffectColor = addTransperencyAngle(colorizedOutput, 
+												fragIn.normal, viewDirObjSpace);
+				return transpEffectColor;
 				// The other approach for colouring.
 				//return col + float4(1, 0, 0, 1)*col	.a;;
 			}

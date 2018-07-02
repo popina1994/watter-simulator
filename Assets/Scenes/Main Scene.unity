@@ -243,13 +243,13 @@ Transform:
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 170076733}
-  m_LocalRotation: {x: 0.40821788, y: -0.23456968, z: 0.10938163, w: 0.8754261}
-  m_LocalPosition: {x: 3, y: 2, z: -5}
+  m_LocalRotation: {x: 0.9128656, y: -0.16629249, z: 0.08591662, w: 0.36282435}
+  m_LocalPosition: {x: 4.22, y: 5.73, z: -5.86}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 1
-  m_LocalEulerAnglesHint: {x: 50, y: -30, z: 0}
+  m_LocalEulerAnglesHint: {x: 136.291, y: -2.869995, z: 19.496994}
 --- !u!1 &282840810
 GameObject:
   m_ObjectHideFlags: 0
@@ -295,6 +295,7 @@ MonoBehaviour:
   material1: {fileID: 2100000, guid: 79012dd81d13cb44288b595f60bb26fc, type: 2}
   material2: {fileID: 2100000, guid: 5a8c00346a53f3c4fad1f41f8230cdc0, type: 2}
   materialCubeMap: {fileID: 2100000, guid: 9a211c84505b4254eb7f2d768c3d1ab2, type: 2}
+  waterColor: {r: 0.8018868, g: 0.13995194, b: 0.13995194, a: 0}
   radius: 1
 --- !u!20 &282840813
 Camera:
