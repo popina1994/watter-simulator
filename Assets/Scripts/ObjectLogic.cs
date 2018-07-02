@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using UnityEditor.Experimental.Animations;
 using UnityEngine;
 
 namespace Assets.Scripts
@@ -14,9 +15,17 @@ namespace Assets.Scripts
         private static Vector3 INIT_POS = new Vector3(4, 3, -9);
         private const string PLAYER_MAT_NAME = "PlayerMat";
         private const float MOV_STEP = 0.1f;
+        private RenderWater _renderWater;
 
-        public ObjectLogic()
+        public RenderWater RenderWater
         {
+            get { return _renderWater; }
+            set { _renderWater = value; }
+        }
+
+        public ObjectLogic(RenderWater renderWater)
+        {
+            RenderWater = renderWater;
             KeyAction = new SortedDictionary<KeyCode, Func<bool>>();
             KeyAction.Add(KeyCode.C, CreateCube);
             KeyAction.Add(KeyCode.F, CreateSphere);
@@ -89,7 +98,7 @@ namespace Assets.Scripts
             return true;
         }
 
-        private bool DestroyObject()
+        public bool DestroyObject()
         {
             if (CurGameObject != null)
             {
@@ -102,6 +111,7 @@ namespace Assets.Scripts
         private void InitObject()
         {
             Material defaultMaterial = null;
+            var z = Resources.FindObjectsOfTypeAll(typeof(Material));
             foreach (var it in Resources.FindObjectsOfTypeAll(typeof(Material)))
             {
                 if (it.name == PLAYER_MAT_NAME)
@@ -123,6 +133,8 @@ namespace Assets.Scripts
             DestroyObject();
             CurGameObject = GameObject.CreatePrimitive(PrimitiveType.Cube);
             InitObject();
+            CurGameObject.AddComponent<GameCube>();
+            CurGameObject.GetComponent<GameCube>().ObjectLogic = this;
             return true;
         }
 
@@ -131,6 +143,8 @@ namespace Assets.Scripts
             DestroyObject();
             CurGameObject = GameObject.CreatePrimitive(PrimitiveType.Sphere);
             InitObject();
+            CurGameObject.AddComponent<GameSphere>();
+            CurGameObject.GetComponent<GameSphere>().ObjectLogic = this;
             return true;
         }
 
@@ -180,6 +194,11 @@ namespace Assets.Scripts
             }
 
             return false;
+        }
+
+        public float CalculateRadius(float impulse)
+        {
+            return impulse * 12;
         }
     }
 }

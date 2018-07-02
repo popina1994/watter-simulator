@@ -24,13 +24,11 @@
 	#include "UnityCG.cginc"
 	#include "Lighting.cginc"
 			
-
 			struct vertexInput
 			{
 				float4 vertex: POSITION;
 				float3 normal: NORMAL;
 				float4 texcoord: TEXCOORD0;
-				//float4 tangent: TANGENT;
 			};
 			struct vertexOutput
 			{
@@ -38,18 +36,11 @@
 				float3 objPos: TEXCOORD0;
 				float3 normal: NORMAL;
 				float3 lightDir: TEXCOORD1;
-				/*
-				float4 pos: TEXCOORD1;
-
-				float3 tangentWorld: TEXCOORD3;
-				float3 binormalWorld: TEXCOORD4;
-				*/
 			};
-			// This is a type of texture seen by shader.
+
 			samplerCUBE _CubeMap;
 			float4   _ColorWater;
 			float4 _NormalSurface;	
-
 
 			// TODO: Rethink how to optimize the code.
 			vertexOutput vert(vertexInput input)
@@ -76,7 +67,7 @@
 			float4 addSpecularLightToReflect(float4 color, vertexOutput fragIn, float3 viewDirObjSpace)
 			{
 				float lambert = max(0, dot(normalize(fragIn.normal),
-					normalize(fragIn.lightDir)));
+										   normalize(fragIn.lightDir)));
 				float3 reflectLight = reflect(-fragIn.lightDir, fragIn.normal);
 				float spec = pow(max(dot(viewDirObjSpace, normalize(reflectLight)), 0.0), 32);
 				float specStrength = 0.7;
@@ -118,8 +109,6 @@
 				float4 transpEffectColor = addTransperencyAngle(colorizedOutput, 
 												fragIn.normal, viewDirObjSpace);
 				return transpEffectColor;
-				// The other approach for colouring.
-				//return col + float4(1, 0, 0, 1)*col	.a;;
 			}
 			ENDCG
 		}

@@ -27,26 +27,19 @@
 			{
 				float4 vertex: POSITION;
 				float4 texcoord: TEXCOORD0;
-				//float4 tangent: TANGENT;
 			};
 			struct vertexOutput 
 			{	
 				float4 posWorld: SV_POSITION;
 				float4 tex: TEXCOORD0;
-				/*
-				float4 posWorld: TEXCOORD1;
-				
-				float3 tangentWorld: TEXCOORD3;
-				float3 binormalWorld: TEXCOORD4;
-				*/
 			};
 			// This is a type of texture seen by shader.
 			sampler2D  _MainTex;
 			samplerCUBE _CubeMap;
 			half3   _Color;
-			float _IsClicked;
-			float _xPos;
-			float _yPos;
+			float4 _IsClicked;
+			float4 _xPos;
+			float4 _yPos;
 			float _Radius;
 
 			vertexOutput vert(vertexInput input) 
@@ -62,11 +55,23 @@
 				return fragPos / 256.0;
 			}
 
-			bool isInRadius(float x, float y, float radius)
+			bool isInRadius(float x, float y, float radius, int idx)
 			{
-				return (((x - _xPos) * (x - _xPos) + (y - _yPos) * (y - _yPos)) <= radius);
+				return (((x - _xPos[idx]) * (x - _xPos[idx]) + (y - _yPos[idx]) * (y - _yPos[idx])) <= radius);
 			}
 
+			bool isInClickRadius(float x, float y, float radius)
+			{
+				for (int idx = 0; idx < 4; idx++)
+				{
+					if (_IsClicked[idx] && isInRadius(x, y, radius, idx))
+					{
+						return true;
+					}
+				}
+				return false;
+			}
+			
 			float4 frag(vertexOutput fragIn) : SV_Target
 			{
 
@@ -97,7 +102,7 @@
 					}
 					t.r = texel.r + f;	
 					t.g = texel.g + t.r;
-					if ((_IsClicked == 1) && isInRadius(fragIn.posWorld.x, fragIn.posWorld.y, _Radius))
+					if (isInClickRadius(fragIn.posWorld.x, fragIn.posWorld.y, _Radius))
 					{
 						t.r = -t.r;
 						//t.g = t.g - 0.001;

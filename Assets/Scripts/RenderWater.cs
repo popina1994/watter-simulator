@@ -10,19 +10,18 @@ public class RenderWater : MonoBehaviour
     public RenderTexture texture1;
     public RenderTexture texture2;
     public RenderTexture textureSkyBox;
-    public RenderTexture textureReflection1;
-    public RenderTexture textureReflection2;
     public Material material1;
     public Material material2;
     public Material materialCubeMap;
     public Color waterColor;
     public float radius;
+
     private GameObject waterQuad;
-    private int idx = 0;
-    private int idxShader = 0;
-    private float xPos;
-    private float yPos;
-    private float isClicked = 1;
+    private int idxTexture;
+    private int idxShader;
+    private Vector4 _xPos = new Vector4();
+    private Vector4 _yPos = new Vector4();
+    private Vector4 _isClicked = new Vector4();
     public static float scaleCol = 20f;
     public static float scaleRow = 20f;
     public static float scaleHeight = 2f;
@@ -30,24 +29,63 @@ public class RenderWater : MonoBehaviour
     private Mesh _meshTmp;
     private ObjectLogic objectLogic;
     private static Vector4 surfaceNormal = new Vector4(0, 1, 0, 0);
-	void Start ()
+
+    public float Radius
+    {
+        get { return radius; }
+        set { radius = value; }
+    }
+
+    public Vector4 XPos
+    {
+        get { return _xPos; }
+        set { _xPos = value; }
+    }
+
+    public Vector4 YPos
+    {
+        get { return _yPos; }
+        set { _yPos = value; }
+    }
+
+    public Vector4 IsClicked
+    {
+        get { return _isClicked; }
+        set { _isClicked = value; }
+    }
+
+    void Start ()
 	{
-	    isClicked = 0;
         waterQuad = GameObject.Find("WaterSurface");
 	    materialCubeMap.shader = Shader.Find("WaterReflectShader");
-        objectLogic = new ObjectLogic();
+        objectLogic = new ObjectLogic(this);
 	}
 
-    private void ConvertClickedPointToTextureCoordinate(Vector3 clickPoint)
+
+    private void PointClicked(Vector3 worldInteractionPoint, int idx)
     {
+        Vector3 localPoint = waterQuad.transform.InverseTransformPoint(worldInteractionPoint);
+        _isClicked[idx] = 1;
         // row -> x, col-> z
-        xPos = scaleRow * clickPoint.x;
-        yPos = scaleCol * clickPoint.z;
+        _xPos[idx] = scaleRow * localPoint.x;
+        _yPos[idx] = scaleCol * localPoint.z;
+    }
+
+    public void WaterWaveHappened(Vector3 worldInteractionPoint)
+    {
+        PointClicked(worldInteractionPoint, 0);
+    }
+
+    public void WaterWaveQuadHappened(Vector3[] worldInteractionPoints)
+    {
+        for (int idx = 0; idx < 4; idx++)
+        {
+            PointClicked(worldInteractionPoints[idx], idx);
+        }
     }
 
     void Update()
     {
-
         if (Input.GetMouseButtonDown(0) || Input.GetMouseButton(0))
         {
             Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
@@ -55,17 +93,15 @@ public class RenderWater : MonoBehaviour
             if (Physics.Raycast(ray, out hitInfo) && 
                 hitInfo.transform.name == waterQuad.name)
             {
-                isClicked = 1;
-                Vector3 localPoint = waterQuad.transform.InverseTransformPoint(hitInfo.point);
-                ConvertClickedPointToTextureCoordinate(localPoint);
-                //Debug.Log("Clicked" + xPos.ToString() + " : " + yPos.ToString());
+                WaterWaveHappened(hitInfo.point);
+                //Debug.Log("Clicked" + _xPos.ToString() + " : " + _yPos.ToString());
             }
         }
         else if (objectLogic.IsKeyPressed())
         {
             objectLogic.ProcessKeyPresses();
         }
-        idx = (idx + 1) % 2;
+        idxTexture = (idxTexture + 1) % 2;
     }
 
     private static float[] GetTextureArrayFromRenderTexture(RenderTexture renderTexture)
@@ -171,6 +207,11 @@ public class RenderWater : MonoBehaviour
         leftBottom = GenerateVertex(heightMapTexture, velHeightMap, heightMapTexture.height/4 - 1, 0);
         rightBottom = GenerateVertex(heightMapTexture, velHeightMap, heightMapTexture.height/4 - 1, 
                                      heightMapTexture.width/2 - 1);
+        float height = (leftTop.y + rightTop.y + leftBottom.y + rightBottom.y) / 4;
+        leftTop.y = height;
+        rightTop.y = height;
+        leftBottom.y = height;
+        rightBottom.y = height;
         AddHeightToMesh(vertices, triangles, rightBottom, leftBottom, leftTop);
         AddHeightToMesh(vertices, triangles, rightTop, rightBottom, leftTop);
 
@@ -196,56 +237,60 @@ public class RenderWater : MonoBehaviour
         meshFilter.mesh = _meshTmp;
     }
 
+    private void InitRenderTexture(Material material, RenderTexture texture, RenderTexture otherTexture)
+    {
+        material.shader = Shader.Find("WaterHeightInit");
+        Graphics.Blit(otherTexture, texture, material);
+        material.shader = Shader.Find("Standard");
+    }
+
+    private void CalculateAndUpdateWater(Material material, RenderTexture currentTexture, 
+        RenderTexture otherTexture)
+    {
+        // I cannot explain why coordinates are swaped. 
+        material.shader = Shader.Find("WaterHeightShader");
+        material.SetVector("_xPos", _yPos);
+        material.SetVector("_yPos", _xPos);
+        material.SetVector("_IsClicked", _isClicked);
+        material.SetFloat("_Radius", radius);
+        Graphics.Blit(currentTexture, otherTexture, material);
+        UpdateWaterBasedOnHeightMap(currentTexture);
+        _isClicked = new Vector4(0, 0, 0, 0);
+        material.shader = Shader.Find("Standard");
+    }
+
+    private void UpdateCubeMap()
+    {
+        cameraCubeMap.RenderToCubemap(textureSkyBox);
+        materialCubeMap.SetTexture("_CubeMap", textureSkyBox);
+        materialCubeMap.SetVector("_NormalSurface", surfaceNormal);
+        materialCubeMap.SetColor("_ColorWater", waterColor);
+    }
+
     void OnRenderImage(RenderTexture src, RenderTexture dest)
     {
-        // idx == 0, currentTexture is texture1
+        // idxTexture == 0, currentTexture is texture1
         // it is written the old one
         RenderTexture currentTexture, otherTexture;
-        Material currentMaterial, otherMatherial;
+        Material currentMaterial;
         Graphics.Blit(src, dest);
-        currentTexture = (idx == 0) ? texture1 : texture2;
-        otherTexture = (idx == 0) ? texture2 : texture1;
-        currentMaterial = (idx == 0) ? material1 : material2;
-        otherMatherial = (idx == 0) ? material2 : material1;
+        currentTexture = (idxTexture == 0) ? texture1 : texture2;
+        otherTexture = (idxTexture == 0) ? texture2 : texture1;
+        currentMaterial = (idxTexture == 0) ? material1 : material2;
         
         if (idxShader == 0)
         {
-            material1.shader = Shader.Find("WaterHeightInit");
-            Graphics.Blit(texture2, texture1, material1);
-            material1.shader = Shader.Find("Standard");
+            InitRenderTexture(material1, texture1, texture2);
             InitializeMeshColider(texture1);
         }
         else if (idxShader == 1)
         {
-            material2.shader = Shader.Find("WaterHeightInit");
-            Graphics.Blit(texture1, texture2, material2);
-            material2.shader = Shader.Find("Standard");
+            InitRenderTexture(material2, texture2, texture1);
         }
         else
         {
-            // I cannot explain why coordinates are swaped. 
-            otherMatherial.shader = Shader.Find("WaterHeightShader");
-            otherMatherial.SetFloat("_xPos", yPos);
-            otherMatherial.SetFloat("_yPos", xPos);
-            otherMatherial.SetFloat("_IsClicked", isClicked);
-            otherMatherial.SetFloat("_Radius", radius);
-            Graphics.Blit(currentTexture, otherTexture, otherMatherial);
-            UpdateWaterBasedOnHeightMap(currentTexture);
-            isClicked = 0;
-            otherMatherial.shader = Shader.Find("Standard");
-
-            cameraCubeMap.RenderToCubemap(textureSkyBox);
-            materialCubeMap.SetTexture("_CubeMap", textureSkyBox);
-            materialCubeMap.SetVector("_NormalSurface", surfaceNormal);
-            materialCubeMap.SetColor("_ColorWater", waterColor);
-            if (idxShader % 2 == 0)
-            {
-                Graphics.Blit(null, textureReflection1, materialCubeMap);
-            }
-            else
-            {
-                Graphics.Blit(null, textureReflection2, materialCubeMap);
-            }
+            CalculateAndUpdateWater(currentMaterial, currentTexture, otherTexture);
+            UpdateCubeMap();
         }
 
         idxShader = idxShader + 1;
