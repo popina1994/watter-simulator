@@ -77,7 +77,8 @@ Material:
     - _MyFloat: 0.5
     - _OcclusionStrength: 1
     - _Parallax: 0.02
-    - _Radius: 72.68347
+    - _Radius: 5
+    - _RendTexSize: 256
     - _SmoothnessTextureChannel: 0
     - _SpecularHighlights: 1
     - _SrcBlend: 1

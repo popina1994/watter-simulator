@@ -5,6 +5,7 @@
 		// Type of the texture seen by unity editor.
 		_MainTex("Base (RGB)", 2D) = "black" {}
 		_Color("Color", Color) = (1.0, 1.0, 0.0, 1.0)
+		_RendTexSize("Size of render texture", Float) = 0
 	}
 
 	SubShader
@@ -40,6 +41,7 @@
 			// This is a type of texture seen by shader.
 			sampler2D  _MainTex;
 			half3   _Color;
+			float _RendTexSize;
 			const int idxVel = 0;
 			const int idxHeight = 1;
 
@@ -53,7 +55,7 @@
 
 			float scaleToTexture(float fragPos)
 			{
-				return 2 * (fragPos / 256.0 - 0.5);
+				return 2 * (fragPos / _RendTexSize - 0.5);
 			}
 
 			float4 frag(vertexOutput fragIn) : SV_Target
@@ -63,8 +65,8 @@
 				float texX = scaleToTexture(fragIn.pos.x);
 				float texY = scaleToTexture(fragIn.pos.y);
 				t.r = 0;
-				//t.g = sin(sqrt(texX * texX + texY * texY));
-				t.g = 0;
+				t.g = sin(sqrt(texX * texX + texY * texY));
+				//t.g = 0;
 				t.b = 0;
 				// DEBUGGING PURPOSES
 				t.a = 100000;

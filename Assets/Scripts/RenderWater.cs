@@ -9,6 +9,7 @@ public class RenderWater : MonoBehaviour
     public Camera cameraCubeMap;
     public RenderTexture texture1;
     public RenderTexture texture2;
+    public RenderTexture textureWaterHeight;
     public RenderTexture textureSkyBox;
     public Material material1;
     public Material material2;
@@ -168,9 +169,9 @@ public class RenderWater : MonoBehaviour
         Vector3 leftBottom;
         Vector3 rightBottom;
         
-        for (int row = 0; row < (heightMapTexture.height/4)-1; row++)
+        for (int row = 0; row < 128; row++)
         {
-            for (int col = 0; col < heightMapTexture.width/2 - 1; col++)
+            for (int col = 0; col < 128; col++)
             {
                 leftTop = GenerateVertex(heightMapTexture, velHeightMap, row, col);
                 rightTop = GenerateVertex(heightMapTexture, velHeightMap, row, col + 1);
@@ -203,10 +204,10 @@ public class RenderWater : MonoBehaviour
         Vector3 rightBottom;
 
         leftTop = GenerateVertex(heightMapTexture, velHeightMap, 0, 0);
-        rightTop = GenerateVertex(heightMapTexture, velHeightMap, 0, heightMapTexture.width/2 - 1);
-        leftBottom = GenerateVertex(heightMapTexture, velHeightMap, heightMapTexture.height/4 - 1, 0);
-        rightBottom = GenerateVertex(heightMapTexture, velHeightMap, heightMapTexture.height/4 - 1, 
-                                     heightMapTexture.width/2 - 1);
+        rightTop = GenerateVertex(heightMapTexture, velHeightMap, 0, 128 - 1);
+        leftBottom = GenerateVertex(heightMapTexture, velHeightMap, 128 - 1, 0);
+        rightBottom = GenerateVertex(heightMapTexture, velHeightMap, 128 - 1,
+            128 - 1);
         float height = (leftTop.y + rightTop.y + leftBottom.y + rightBottom.y) / 4;
         leftTop.y = height;
         rightTop.y = height;
@@ -235,13 +236,16 @@ public class RenderWater : MonoBehaviour
         Destroy(_meshTmp);
         _meshTmp = GenerateMeshBasedOnHeightMap(heightMapTexture, velHeightMap);
         meshFilter.mesh = _meshTmp;
+        meshFilter.mesh.RecalculateNormals();
+        int t = 1;
     }
 
     private void InitRenderTexture(Material material, RenderTexture texture, RenderTexture otherTexture)
     {
         material.shader = Shader.Find("WaterHeightInit");
+        material.SetFloat("_RendTexSize", texture.width);
         Graphics.Blit(otherTexture, texture, material);
-        material.shader = Shader.Find("Standard");
+        //material.shader = Shader.Find("Standard");
     }
 
     private void CalculateAndUpdateWater(Material material, RenderTexture currentTexture, 
@@ -253,18 +257,21 @@ public class RenderWater : MonoBehaviour
         material.SetVector("_yPos", _xPos);
         material.SetVector("_IsClicked", _isClicked);
         material.SetFloat("_Radius", radius);
+        material.SetFloat("_RendTexSize", texture1.width);
         Graphics.Blit(currentTexture, otherTexture, material);
         UpdateWaterBasedOnHeightMap(currentTexture);
         _isClicked = new Vector2(0, 0);
         material.shader = Shader.Find("Standard");
     }
 
-    private void UpdateCubeMap()
+    private void UpdateCubeMap(RenderTexture texture)
     {
         cameraCubeMap.RenderToCubemap(textureSkyBox);
+        materialCubeMap.SetTexture("_HeightMap", texture);
         materialCubeMap.SetTexture("_CubeMap", textureSkyBox);
         materialCubeMap.SetVector("_NormalSurface", surfaceNormal);
         materialCubeMap.SetColor("_ColorWater", waterColor);
+        //Graphics.Blit(null, textureWaterHeight, materialCubeMap);
     }
 
     void OnRenderImage(RenderTexture src, RenderTexture dest)
@@ -286,11 +293,12 @@ public class RenderWater : MonoBehaviour
         else if (idxShader == 1)
         {
             InitRenderTexture(material2, texture2, texture1);
+            UpdateWaterBasedOnHeightMap(currentTexture);
         }
         else
         {
             CalculateAndUpdateWater(currentMaterial, currentTexture, otherTexture);
-            UpdateCubeMap();
+            UpdateCubeMap(currentTexture);
         }
 
         idxShader = idxShader + 1;

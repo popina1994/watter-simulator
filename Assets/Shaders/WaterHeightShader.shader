@@ -10,6 +10,7 @@
 		_xPos("Y position in clicked texture", Float) = 0
 		_yPos("Y position in clicked texture", Float) = 0
 		_Radius("Radius of click", Float) = 0
+		_RendTexSize("Size of render texture", Float) = 0
 	}
 
 	SubShader
@@ -41,6 +42,7 @@
 			float2 _xPos;
 			float2 _yPos;
 			float _Radius;
+			float _RendTexSize;
 
 			vertexOutput vert(vertexInput input) 
 			{
@@ -52,7 +54,7 @@
 
 			float scaleToTexture(float fragPos)
 			{
-				return fragPos / 256.0;
+				return fragPos / _RendTexSize;
 			}
 
 			bool isInRadius(float xCenter, float yCenter, float x, float y, float radius)
@@ -82,9 +84,8 @@
 
 			bool isInQuadRadius(float x, float y, float radius)
 			{
-				
 				float2 center = float2(interpolate(_xPos[0], _xPos[1], 0.5f),
-				interpolate(_yPos[0], _yPos[1], 0.5f));
+									   interpolate(_yPos[0], _yPos[1], 0.5f));
 				float2 leftTop = abs(translateTo(_xPos[0], _yPos[0], center));
 				float2 pointCheck = abs(translateTo(x, y, center));
 				return ((pointCheck.x < leftTop.x) && (pointCheck.y < leftTop.y)) ||
@@ -100,8 +101,8 @@
 
 			float4 frag(vertexOutput fragIn) : SV_Target
 			{
-
 				float4 texel = tex2D(_MainTex, fragIn.tex);
+				//tex2Dlod(_HeightMap, float4(input.texcoord.xy, 0, 0));
 				float4 t;
 				float f;
 				float upY = scaleToTexture(fragIn.posWorld.y + 1);
@@ -128,7 +129,8 @@
 					}
 					t.r = texel.r + f;	
 					t.g = texel.g + t.r;
-					if (isInQuadRadiusClick(fragIn.posWorld.x, fragIn.posWorld.y, _Radius))
+					if (isInQuadRadiusClick(fragIn.posWorld.x, fragIn.posWorld.y, _Radius)
+						|| isInClickRadius(fragIn.posWorld.x, fragIn.posWorld.y, _Radius))
 					{
 						t.r = -t.r;
 						t.g = t.g - 0.001;

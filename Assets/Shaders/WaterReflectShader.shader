@@ -6,6 +6,7 @@
 		_CubeMap("Cube map of surrounding", CUBE) = "white" {}
 		_ColorWater("Color of water", Color) = (1.0, 1.0, 0.0, 1.0)
 		_NormalSurface("Normal to the surface of water", Vector) = (0, 0, 0, 0)
+		_HeightMap("Height map that represent water height", 2D) = "black" {}
 	}
 
 	SubShader
@@ -20,6 +21,8 @@
 			CGPROGRAM
 	#pragma vertex vert
 	#pragma fragment frag
+	#pragma target 5.0
+
 
 	#include "UnityCG.cginc"
 	#include "Lighting.cginc"
@@ -40,14 +43,26 @@
 
 			samplerCUBE _CubeMap;
 			float4   _ColorWater;
-			float4 _NormalSurface;	
+			float4 _NormalSurface;
+			sampler2D _HeightMap;
 
 			// TODO: Rethink how to optimize the code.
 			vertexOutput vert(vertexInput input)
 			{
 				vertexOutput output;
+				float4 texel = tex2Dlod(_HeightMap, float4(input.texcoord.x, input.texcoord.y, 0, 0));
+				/*
+				float4 vertPos = float4(input.vertex.x, input.texcoord.x + input.texcoord.y,
+					input.vertex.z, input.vertex.w);
+				
+								
+				output.objPos = vertPos;
+				output.pos = UnityObjectToClipPos(vertPos);
+				*/
+
 				output.pos = UnityObjectToClipPos(input.vertex);
 				output.objPos = input.vertex;
+
 				output.normal = input.normal;
 				// Light direction in world coordinates.
 				output.lightDir = normalize(ObjSpaceLightDir(input.vertex));

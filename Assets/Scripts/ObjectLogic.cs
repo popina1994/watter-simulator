@@ -111,7 +111,6 @@ namespace Assets.Scripts
         private void InitObject()
         {
             Material defaultMaterial = null;
-            var z = Resources.FindObjectsOfTypeAll(typeof(Material));
             foreach (var it in Resources.FindObjectsOfTypeAll(typeof(Material)))
             {
                 if (it.name == PLAYER_MAT_NAME)
