@@ -73,14 +73,14 @@ Material:
     - _MyFloat: 0.5
     - _OcclusionStrength: 1
     - _Parallax: 0.02
-    - _Radius: 1
+    - _Radius: 72.68347
     - _SmoothnessTextureChannel: 0
     - _SpecularHighlights: 1
     - _SrcBlend: 1
     - _UVSec: 0
     - _ZWrite: 1
-    - _xPos: 0
-    - _yPos: 0
+    - _xPos: 82.14728
+    - _yPos: 33.394646
     m_Colors:
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}

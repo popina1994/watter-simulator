@@ -63,8 +63,8 @@
 				float texX = scaleToTexture(fragIn.pos.x);
 				float texY = scaleToTexture(fragIn.pos.y);
 				t.r = 0;
-				t.g = sin(sqrt(texX * texX + texY * texY));
-				//t.g = 0;
+				//t.g = sin(sqrt(texX * texX + texY * texY));
+				t.g = 0;
 				t.b = 0;
 				// DEBUGGING PURPOSES
 				t.a = 100000;

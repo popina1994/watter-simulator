@@ -19,9 +19,9 @@ public class RenderWater : MonoBehaviour
     private GameObject waterQuad;
     private int idxTexture;
     private int idxShader;
-    private Vector4 _xPos = new Vector4();
-    private Vector4 _yPos = new Vector4();
-    private Vector4 _isClicked = new Vector4();
+    private Vector2 _xPos = new Vector2();
+    private Vector2 _yPos = new Vector2();
+    private Vector2 _isClicked = new Vector2();
     public static float scaleCol = 20f;
     public static float scaleRow = 20f;
     public static float scaleHeight = 2f;
@@ -36,19 +36,19 @@ public class RenderWater : MonoBehaviour
         set { radius = value; }
     }
 
-    public Vector4 XPos
+    public Vector2 XPos
     {
         get { return _xPos; }
         set { _xPos = value; }
     }
 
-    public Vector4 YPos
+    public Vector2 YPos
     {
         get { return _yPos; }
         set { _yPos = value; }
     }
 
-    public Vector4 IsClicked
+    public Vector2 IsClicked
     {
         get { return _isClicked; }
         set { _isClicked = value; }
@@ -78,7 +78,7 @@ public class RenderWater : MonoBehaviour
 
     public void WaterWaveQuadHappened(Vector3[] worldInteractionPoints)
     {
-        for (int idx = 0; idx < 4; idx++)
+        for (int idx = 0; idx < 2; idx++)
         {
             PointClicked(worldInteractionPoints[idx], idx);
         }
@@ -255,7 +255,7 @@ public class RenderWater : MonoBehaviour
         material.SetFloat("_Radius", radius);
         Graphics.Blit(currentTexture, otherTexture, material);
         UpdateWaterBasedOnHeightMap(currentTexture);
-        _isClicked = new Vector4(0, 0, 0, 0);
+        _isClicked = new Vector2(0, 0);
         material.shader = Shader.Find("Standard");
     }
 

@@ -21,14 +21,13 @@ namespace Assets.Scripts
         void OnCollisionEnter(Collision collision)
         {
             Vector3 contactPoint = collision.contacts[0].point;
-
-            ObjectLogic.RenderWater.Radius = ObjectLogic.CalculateRadius(collision.impulse.y);
-            Vector3[] conactPoints = new Vector3[4]
+            Vector3 positionVector = this.gameObject.transform.position;
+            // TODO: Refactor this logic. 
+            ObjectLogic.RenderWater.Radius = ObjectLogic.CalculateRadius(collision.impulse.y) / 12;
+            Vector3[] conactPoints = new Vector3[2]
             {
-                new Vector3(contactPoint.x - 0.8f, contactPoint.y, contactPoint.z - 0.5f),
-                new Vector3(contactPoint.x - 0.8f, contactPoint.y, contactPoint.z + 0.5f),    
-                new Vector3(contactPoint.x + 0.2f, contactPoint.y, contactPoint.z - 0.5f),
-                new Vector3(contactPoint.x + 0.2f, contactPoint.y, contactPoint.z + 0.5f)
+                new Vector3(positionVector.x -0.5f, contactPoint.y, positionVector.z - 0.5f),
+                new Vector3(positionVector.x + 0.5f, contactPoint.y, positionVector.z + 0.5f),    
             };
             ObjectLogic.RenderWater.WaterWaveQuadHappened(conactPoints);
             ObjectLogic.DestroyObject();

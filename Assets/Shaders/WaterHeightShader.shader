@@ -37,9 +37,9 @@
 			sampler2D  _MainTex;
 			samplerCUBE _CubeMap;
 			half3   _Color;
-			float4 _IsClicked;
-			float4 _xPos;
-			float4 _yPos;
+			float2 _IsClicked;
+			float2 _xPos;
+			float2 _yPos;
 			float _Radius;
 
 			vertexOutput vert(vertexInput input) 
@@ -55,23 +55,49 @@
 				return fragPos / 256.0;
 			}
 
+			bool isInRadius(float xCenter, float yCenter, float x, float y, float radius)
+			{
+				return (((x - xCenter) * (x - xCenter) + (y - yCenter) * (y - yCenter)) <= radius);
+			}
+
 			bool isInRadius(float x, float y, float radius, int idx)
 			{
-				return (((x - _xPos[idx]) * (x - _xPos[idx]) + (y - _yPos[idx]) * (y - _yPos[idx])) <= radius);
+				return isInRadius(_xPos[idx], _yPos[idx], x, y, radius);
 			}
 
 			bool isInClickRadius(float x, float y, float radius)
 			{
-				for (int idx = 0; idx < 4; idx++)
-				{
-					if (_IsClicked[idx] && isInRadius(x, y, radius, idx))
-					{
-						return true;
-					}
-				}
-				return false;
+				return (_IsClicked[0] && isInRadius(x, y, radius, 0));
 			}
-			
+
+			float interpolate(float dim1, float dim2, float a)
+			{
+				return a * dim1 + (1 - a) * dim2;
+			}
+
+			float2 translateTo(float x, float y, float2 center)
+			{
+				return float2(x - center.x, y - center.y);
+			}
+
+			bool isInQuadRadius(float x, float y, float radius)
+			{
+				
+				float2 center = float2(interpolate(_xPos[0], _xPos[1], 0.5f),
+				interpolate(_yPos[0], _yPos[1], 0.5f));
+				float2 leftTop = abs(translateTo(_xPos[0], _yPos[0], center));
+				float2 pointCheck = abs(translateTo(x, y, center));
+				return ((pointCheck.x < leftTop.x) && (pointCheck.y < leftTop.y)) ||
+					((pointCheck.x < leftTop.x) && (pointCheck.y < leftTop.y + radius)) ||
+					((pointCheck.x < leftTop.x + radius) && (pointCheck.y < leftTop.y)) ||
+					isInRadius(leftTop.x, leftTop.y, pointCheck.x, pointCheck.y, radius);
+			}
+
+			bool isInQuadRadiusClick(float x, float y, float radius)
+			{
+				return (_IsClicked[0] && _IsClicked[1] && isInQuadRadius(x, y, radius));
+			}
+
 			float4 frag(vertexOutput fragIn) : SV_Target
 			{
 
@@ -102,10 +128,10 @@
 					}
 					t.r = texel.r + f;	
 					t.g = texel.g + t.r;
-					if (isInClickRadius(fragIn.posWorld.x, fragIn.posWorld.y, _Radius))
+					if (isInQuadRadiusClick(fragIn.posWorld.x, fragIn.posWorld.y, _Radius))
 					{
 						t.r = -t.r;
-						//t.g = t.g - 0.001;
+						t.g = t.g - 0.001;
 						//t.g = t.g - 0.05;
 					}
 					t.b = 0;

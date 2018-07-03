@@ -294,7 +294,7 @@ MonoBehaviour:
   material2: {fileID: 2100000, guid: 5a8c00346a53f3c4fad1f41f8230cdc0, type: 2}
   materialCubeMap: {fileID: 2100000, guid: 9a211c84505b4254eb7f2d768c3d1ab2, type: 2}
   waterColor: {r: 0.8018868, g: 0.13995194, b: 0.13995194, a: 0}
-  radius: 1
+  radius: 5
 --- !u!20 &282840813
 Camera:
   m_ObjectHideFlags: 0
