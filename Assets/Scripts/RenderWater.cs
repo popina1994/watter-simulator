@@ -13,9 +13,11 @@ public class RenderWater : MonoBehaviour
     public RenderTexture textureSkyBox;
     public Material material1;
     public Material material2;
+    public Material waterHeightMaterial;
     public Material materialCubeMap;
     public Color waterColor;
     public float radius;
+    private GameObject testCube;
 
     private GameObject waterQuad;
     private int idxTexture;
@@ -23,9 +25,13 @@ public class RenderWater : MonoBehaviour
     private Vector2 _xPos = new Vector2();
     private Vector2 _yPos = new Vector2();
     private Vector2 _isClicked = new Vector2();
+    public static int rowVertices = 64;
+    public static int colVertices = 128;
     public static float scaleCol = 20f;
     public static float scaleRow = 20f;
     public static float scaleHeight = 2f;
+    private int rowSize;
+    private int colSize;
     private static float  []resultsArray = null;
     private Mesh _meshTmp;
     private ObjectLogic objectLogic;
@@ -60,6 +66,8 @@ public class RenderWater : MonoBehaviour
         waterQuad = GameObject.Find("WaterSurface");
 	    materialCubeMap.shader = Shader.Find("WaterReflectShader");
         objectLogic = new ObjectLogic(this);
+	    rowSize = texture1.width;
+	    colSize = texture1.height;
 	}
 
 
@@ -68,8 +76,8 @@ public class RenderWater : MonoBehaviour
         Vector3 localPoint = waterQuad.transform.InverseTransformPoint(worldInteractionPoint);
         _isClicked[idx] = 1;
         // row -> x, col-> z
-        _xPos[idx] = scaleRow * localPoint.x;
-        _yPos[idx] = scaleCol * localPoint.z;
+        _xPos[idx] = scaleRow * localPoint.x * rowSize / rowVertices;
+        _yPos[idx] = scaleCol * localPoint.z * colSize / colVertices;
     }
 
     public void WaterWaveHappened(Vector3 worldInteractionPoint)
@@ -95,7 +103,7 @@ public class RenderWater : MonoBehaviour
                 hitInfo.transform.name == waterQuad.name)
             {
                 WaterWaveHappened(hitInfo.point);
-                //Debug.Log("Clicked" + _xPos.ToString() + " : " + _yPos.ToString());
+                Debug.Log("Clicked" + _xPos.ToString() + " : " + _yPos.ToString());
             }
         }
         else if (objectLogic.IsKeyPressed())
@@ -120,8 +128,6 @@ public class RenderWater : MonoBehaviour
         {
             resultsArray[i * 2] = pixels[i].r;
             resultsArray[i * 2 + 1] = pixels[i].g;
-            //results[i * 4 + 2] = pix2[i].b;
-            //results[i * 4 + 3] = pix2[i].a;
         }
         Destroy(texture2D);
 
@@ -169,14 +175,14 @@ public class RenderWater : MonoBehaviour
         Vector3 leftBottom;
         Vector3 rightBottom;
         
-        for (int row = 0; row < 128; row++)
+        for (int rowX = 0; rowX < rowVertices; rowX++)
         {
-            for (int col = 0; col < 128; col++)
+            for (int colZ = 0; colZ < colVertices; colZ++)
             {
-                leftTop = GenerateVertex(heightMapTexture, velHeightMap, row, col);
-                rightTop = GenerateVertex(heightMapTexture, velHeightMap, row, col + 1);
-                leftBottom = GenerateVertex(heightMapTexture, velHeightMap, row + 1, col);
-                rightBottom = GenerateVertex(heightMapTexture, velHeightMap, row + 1, col + 1);
+                leftTop = GenerateVertex(heightMapTexture, velHeightMap, rowX, colZ);
+                rightTop = GenerateVertex(heightMapTexture, velHeightMap, rowX, colZ + 1);
+                leftBottom = GenerateVertex(heightMapTexture, velHeightMap, rowX + 1, colZ);
+                rightBottom = GenerateVertex(heightMapTexture, velHeightMap, rowX + 1, colZ + 1);
                 AddHeightToMesh(vertices, triangles, rightBottom, leftBottom, leftTop);
                 AddHeightToMesh(vertices, triangles, rightTop, rightBottom, leftTop);
             }
@@ -204,10 +210,10 @@ public class RenderWater : MonoBehaviour
         Vector3 rightBottom;
 
         leftTop = GenerateVertex(heightMapTexture, velHeightMap, 0, 0);
-        rightTop = GenerateVertex(heightMapTexture, velHeightMap, 0, 128 - 1);
-        leftBottom = GenerateVertex(heightMapTexture, velHeightMap, 128 - 1, 0);
-        rightBottom = GenerateVertex(heightMapTexture, velHeightMap, 128 - 1,
-            128 - 1);
+        rightTop = GenerateVertex(heightMapTexture, velHeightMap, 0, colVertices - 1);
+        leftBottom = GenerateVertex(heightMapTexture, velHeightMap, rowVertices - 1, 0);
+        rightBottom = GenerateVertex(heightMapTexture, velHeightMap, rowVertices - 1,
+            colVertices - 1);
         float height = (leftTop.y + rightTop.y + leftBottom.y + rightBottom.y) / 4;
         leftTop.y = height;
         rightTop.y = height;
@@ -233,10 +239,12 @@ public class RenderWater : MonoBehaviour
     {
         float[] velHeightMap = GetTextureArrayFromRenderTexture(heightMapTexture);
         MeshFilter meshFilter = waterQuad.GetComponent<MeshFilter>() as MeshFilter;
+        
         Destroy(_meshTmp);
         _meshTmp = GenerateMeshBasedOnHeightMap(heightMapTexture, velHeightMap);
+        _meshTmp.RecalculateNormals();
         meshFilter.mesh = _meshTmp;
-        meshFilter.mesh.RecalculateNormals();
+        
         int t = 1;
     }
 
@@ -245,7 +253,6 @@ public class RenderWater : MonoBehaviour
         material.shader = Shader.Find("WaterHeightInit");
         material.SetFloat("_RendTexSize", texture.width);
         Graphics.Blit(otherTexture, texture, material);
-        //material.shader = Shader.Find("Standard");
     }
 
     private void CalculateAndUpdateWater(Material material, RenderTexture currentTexture, 
@@ -253,25 +260,28 @@ public class RenderWater : MonoBehaviour
     {
         // I cannot explain why coordinates are swaped. 
         material.shader = Shader.Find("WaterHeightShader");
-        material.SetVector("_xPos", _yPos);
-        material.SetVector("_yPos", _xPos);
+        material.SetVector("_xPos", _xPos);
+        material.SetVector("_yPos", _yPos);
         material.SetVector("_IsClicked", _isClicked);
         material.SetFloat("_Radius", radius);
         material.SetFloat("_RendTexSize", texture1.width);
         Graphics.Blit(currentTexture, otherTexture, material);
-        UpdateWaterBasedOnHeightMap(currentTexture);
+        //UpdateWaterBasedOnHeightMap(currentTexture);
         _isClicked = new Vector2(0, 0);
         material.shader = Shader.Find("Standard");
+
     }
 
     private void UpdateCubeMap(RenderTexture texture)
     {
         cameraCubeMap.RenderToCubemap(textureSkyBox);
-        materialCubeMap.SetTexture("_HeightMap", texture);
+        materialCubeMap.SetFloat("_ScaleHeight", scaleHeight);
+        materialCubeMap.SetTexture("_MainTex", texture);
         materialCubeMap.SetTexture("_CubeMap", textureSkyBox);
         materialCubeMap.SetVector("_NormalSurface", surfaceNormal);
         materialCubeMap.SetColor("_ColorWater", waterColor);
-        //Graphics.Blit(null, textureWaterHeight, materialCubeMap);
+        materialCubeMap.SetFloat("_RowWidth", rowVertices / scaleRow);
+        materialCubeMap.SetFloat("_ColWidth", colVertices / scaleCol);
     }
 
     void OnRenderImage(RenderTexture src, RenderTexture dest)
@@ -299,6 +309,8 @@ public class RenderWater : MonoBehaviour
         {
             CalculateAndUpdateWater(currentMaterial, currentTexture, otherTexture);
             UpdateCubeMap(currentTexture);
+            MeshFilter meshFilter = waterQuad.GetComponent<MeshFilter>() as MeshFilter;
+            meshFilter.mesh.RecalculateNormals();
         }
 
         idxShader = idxShader + 1;

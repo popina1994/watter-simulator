@@ -102,7 +102,6 @@
 			float4 frag(vertexOutput fragIn) : SV_Target
 			{
 				float4 texel = tex2D(_MainTex, fragIn.tex);
-				//tex2Dlod(_HeightMap, float4(input.texcoord.xy, 0, 0));
 				float4 t;
 				float f;
 				float upY = scaleToTexture(fragIn.posWorld.y + 1);
@@ -133,8 +132,9 @@
 						|| isInClickRadius(fragIn.posWorld.x, fragIn.posWorld.y, _Radius))
 					{
 						t.r = -t.r;
-						t.g = t.g - 0.001;
-						//t.g = t.g - 0.05;
+						//t.g = t.g - 0.001;
+						t.g = t.g - 0.05;		
+						//t.x = 0.5;
 					}
 					t.b = 0;
 					t.a = 1;
