@@ -136,7 +136,7 @@ public class RenderWater : MonoBehaviour
 
     }
 
-    private static int IndexInTextureArray(RenderTexture renderTexture, int row, int col)
+    private static long IndexInTextureArray(RenderTexture renderTexture, int row, int col)
     {
         return 2 * (row * renderTexture.width + col) + 1;
     }
@@ -244,8 +244,6 @@ public class RenderWater : MonoBehaviour
         _meshTmp = GenerateMeshBasedOnHeightMap(heightMapTexture, velHeightMap);
         _meshTmp.RecalculateNormals();
         meshFilter.mesh = _meshTmp;
-        
-        int t = 1;
     }
 
     private void InitRenderTexture(Material material, RenderTexture texture, RenderTexture otherTexture)
@@ -266,10 +264,8 @@ public class RenderWater : MonoBehaviour
         material.SetFloat("_Radius", radius);
         material.SetFloat("_RendTexSize", texture1.width);
         Graphics.Blit(currentTexture, otherTexture, material);
-        //UpdateWaterBasedOnHeightMap(currentTexture);
         _isClicked = new Vector2(0, 0);
         material.shader = Shader.Find("Standard");
-
     }
 
     private void UpdateCubeMap(RenderTexture texture)
@@ -309,8 +305,6 @@ public class RenderWater : MonoBehaviour
         {
             CalculateAndUpdateWater(currentMaterial, currentTexture, otherTexture);
             UpdateCubeMap(currentTexture);
-            MeshFilter meshFilter = waterQuad.GetComponent<MeshFilter>() as MeshFilter;
-            meshFilter.mesh.RecalculateNormals();
         }
 
         idxShader = idxShader + 1;

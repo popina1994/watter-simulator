@@ -124,7 +124,7 @@
 					}
 					if (f < -0.1)
 					{
-						f = 0.1;
+						f = -0.1;
 					}
 					t.r = texel.r + f;	
 					t.g = texel.g + t.r;
@@ -132,8 +132,8 @@
 						|| isInClickRadius(fragIn.posWorld.x, fragIn.posWorld.y, _Radius))
 					{
 						t.r = -t.r;
-						//t.g = t.g - 0.001;
-						t.g = t.g - 0.05;		
+						t.g = t.g - 0.001;
+						//t.g = t.g - 0.05;		
 						//t.x = 0.5;
 					}
 					t.b = 0;
