@@ -9,11 +9,9 @@ public class RenderWater : MonoBehaviour
     public Camera cameraCubeMap;
     public RenderTexture texture1;
     public RenderTexture texture2;
-    public RenderTexture textureWaterHeight;
     public RenderTexture textureSkyBox;
     public Material material1;
     public Material material2;
-    public Material waterHeightMaterial;
     public Material materialCubeMap;
     public Color waterColor;
     public float radius;
@@ -35,7 +33,6 @@ public class RenderWater : MonoBehaviour
     private static float  []resultsArray = null;
     private Mesh _meshTmp;
     private ObjectLogic objectLogic;
-    private static Vector4 surfaceNormal = new Vector4(0, 1, 0, 0);
 
     public float Radius
     {
@@ -65,6 +62,7 @@ public class RenderWater : MonoBehaviour
 	{
         waterQuad = GameObject.Find("WaterSurface");
 	    materialCubeMap.shader = Shader.Find("WaterReflectShader");
+        //materialWaterVertexNormal.shader = Shader.Find("WaterVertexNormalShader");
         objectLogic = new ObjectLogic(this);
 	    rowSize = texture1.width;
 	    colSize = texture1.height;
@@ -265,7 +263,7 @@ public class RenderWater : MonoBehaviour
         material.SetFloat("_RendTexSize", texture1.width);
         Graphics.Blit(currentTexture, otherTexture, material);
         _isClicked = new Vector2(0, 0);
-        material.shader = Shader.Find("Standard");
+        //material.shader = Shader.Find("Standard");
     }
 
     private void UpdateCubeMap(RenderTexture texture)
@@ -274,10 +272,11 @@ public class RenderWater : MonoBehaviour
         materialCubeMap.SetFloat("_ScaleHeight", scaleHeight);
         materialCubeMap.SetTexture("_MainTex", texture);
         materialCubeMap.SetTexture("_CubeMap", textureSkyBox);
-        materialCubeMap.SetVector("_NormalSurface", surfaceNormal);
         materialCubeMap.SetColor("_ColorWater", waterColor);
         materialCubeMap.SetFloat("_RowWidth", rowVertices / scaleRow);
         materialCubeMap.SetFloat("_ColWidth", colVertices / scaleCol);
+        materialCubeMap.SetFloat("_DispRow", 1 / scaleRow);
+        materialCubeMap.SetFloat("_DispCol", 1 / scaleCol);
     }
 
     void OnRenderImage(RenderTexture src, RenderTexture dest)

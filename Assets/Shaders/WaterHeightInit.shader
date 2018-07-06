@@ -23,20 +23,12 @@
 			struct vertexInput
 			{
 				float4 vertex: POSITION;
-				//float3 normal: NORMAL;
 				float4 texcoord: TEXCOORD0;
-				//float4 tangent: TANGENT;
 			};
 			struct vertexOutput
 			{
 				float4 pos: SV_POSITION;
 				float4 tex: TEXCOORD0;
-				/*
-				float4 posWorld: TEXCOORD1;
-				float3 normalWorld: TEXCOORD2;
-				float3 tangentWorld: TEXCOORD3;
-				float3 binormalWorld: TEXCOORD4;
-				*/
 			};
 			// This is a type of texture seen by shader.
 			sampler2D  _MainTex;
@@ -65,8 +57,8 @@
 				float texX = scaleToTexture(fragIn.pos.x);
 				float texY = scaleToTexture(fragIn.pos.y);
 				t.r = 0;
-				t.g = sin(sqrt(texX * texX + texY * texY));
-				//t.g = 0;
+				//t.g = sin(sqrt(texX * texX + texY * texY));
+				t.g = 0;
 				t.b = 0;
 				// DEBUGGING PURPOSES
 				t.a = 100000;
