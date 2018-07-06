@@ -62,7 +62,6 @@ public class RenderWater : MonoBehaviour
 	{
         waterQuad = GameObject.Find("WaterSurface");
 	    materialCubeMap.shader = Shader.Find("WaterReflectShader");
-        //materialWaterVertexNormal.shader = Shader.Find("WaterVertexNormalShader");
         objectLogic = new ObjectLogic(this);
 	    rowSize = texture1.width;
 	    colSize = texture1.height;

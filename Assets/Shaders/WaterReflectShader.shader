@@ -1,4 +1,6 @@
-﻿Shader "WaterReflectShader"
+﻿// Upgrade NOTE: replaced '_World2Object' with 'unity_WorldToObject'
+
+Shader "WaterReflectShader"
 {
 	Properties
 	{
@@ -92,7 +94,7 @@
 
 				output.normal = input.normal;
 				output.tex = float4(uv, 0.0, 0.0);
-				// Light direction in world coordinates.
+				// Light direction in object coordinates.
 				output.lightDir = normalize(ObjSpaceLightDir(vertPos));
 				output.test = float4(uv.x, uv.y, 0, 0);
 				return output;
@@ -136,7 +138,8 @@
 				for (int i = 0; i < 3; i++)
 				{
 					result = input[i];
-					result.normal = calculaterInterpolateNormal(input[i].objPos, input[i].worldPosition.xyz);
+					result.normal = mul(unity_WorldToObject, 
+								calculaterInterpolateNormal(input[i].objPos, input[i].worldPosition.xyz));
 					OutputStream.Append(result);
 				}
 			}
